@@ -167,6 +167,47 @@ def get_PES_from_vaspruns(
         energy[i] = vr.final_energy
     return Q, (energy - np.min(energy))
 
+# NLQC: get PES from input of total energies. Because not necessarily user
+#       wants to use VASP to do this calculation...
+def get_PES_from_inputs(
+        ground: Structure,
+        excited: Structure,
+        ccd: List[Structure,float],
+        tol: float = 0.001
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Extract the potential energy surface (PES) from structures and their corresponding
+    total energies.
+
+    This function reads in the structures and total energies to return the Q values and
+    total energies of each calculation, and then returns the results as a list. 
+
+    Parameters
+    ----------
+    ground : pymatgen.core.structure.Structure
+        pymatgen structure corresponding to the ground (final) state
+    excited : pymatgen.core.structure.Structure
+        pymatgen structure corresponding to the excited (initial) state
+    ccd : list(Structure,float)
+        A list of tuples (structures,energies) that make up the PES and their 
+        total energies.
+        Note that the minimum (0% displacement) should be included in the list.
+    tol : float
+        tolerance to pass to get_Q_from_struct
+
+    Returns
+    -------
+    Q : np.array(float)
+        array of Q values (amu^{1/2} Angstrom) corresponding to each vasprun
+    energy : np.array(float)
+        array of energies (eV) corresponding to each vasprun
+    """
+    num = len(ccd)
+    Q, energy = (np.zeros(num), np.zeros(num))
+    for i, vr in enumerate(ccd):
+        Q[i] = get_Q_from_struct(ground, excited, vr[i][0], tol=tol)
+        energy[i] = vr[i][1]
+    return Q, (energy - np.min(energy))
+
 
 def get_omega_from_PES(
         Q: np.ndarray,
